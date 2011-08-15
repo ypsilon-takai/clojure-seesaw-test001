@@ -1,4 +1,4 @@
-(ns guitest.core2
+(ns guitest.core3
   (:use seesaw.core))
 
 (import '(java.awt AWTException Robot Rectangle Toolkit)
@@ -11,6 +11,10 @@
 ;;   test image D:\Profiles\q3197c\workspace\clojure\guitest\res\y.jpg
 ;;
 (def srcfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y02.jpg")
+
+(defn get-image [filename]
+  "returns BufferedImage of <filename>"
+  (ImageIO/read (File. filename)))
 
 
 ;;;;
@@ -30,10 +34,7 @@
     s-image)
 
   (defn dest-image []
-    d-image)
-  )
-
-(fill-color 0xff00ffff)
+    d-image))
 
 (defn magnitude [rgb]
   (let [r (/ (bit-and rgb 0xff0000) 0x10000)
@@ -58,6 +59,8 @@
       (.setRGB out-bi x y (grayscaled-val
 			   (magnitude (.getRGB in-bi x y))))))))
 
+(create-grayscaled-img (src-image) (dest-image))
+
 (def open-action
      (action 
       :handler (fn [e] (alert "I should open a new something."))
@@ -73,21 +76,14 @@
 
 (def detect-edge-action
      (action
-      :handler (fn [e] (alert "now not here."))
+      :handler (fn [e] (println "hey"))
       :name "Edge detection"
       :tip "Detect edge of left image."))
 
 
-(defn get-image [filename]
-  "returns BufferedImage of <filename>"
-  (ImageIO/read (File. filename)))
-
-;(get-image '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y.jpg")
-
-(repaint! (select [:*] root)
+;;(get-image '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y.jpg")
 
 (defn main-window []
-
   (frame :title "Hello"
 	    :width 400
 	    :height 400
@@ -123,4 +119,4 @@
 	    :on-close :dispose))
   
 
-(show! (test-frame))
+;;(show! (test-frame))
