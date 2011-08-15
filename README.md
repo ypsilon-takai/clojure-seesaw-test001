@@ -1,4 +1,4 @@
-### guitest
+guitest
 -----------------------
 
 My first program using seesaw.
