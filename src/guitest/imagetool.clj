@@ -1,5 +1,5 @@
 (ns guitest.imagetool
-  (:use (clojure.contrib.math)))
+  (:use clojure.contrib.math))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; rgb tool
@@ -8,42 +8,45 @@
 	r (/ (bit-and rgb-val 0xff0000) 0x10000)
 	g (/ (bit-and rgb-val 0xff00) 0x100)
 	b (bit-and rgb-val 0xff)]
-    [a r g b]))
+    [r g b a]))
   
 
-(defn list-to-rgba [r g b a]
-  ([r g b]
-     (list-to-rgba [r g b 0xFF]))
-  ([r g b a]
-     (+ (* 0x1000000 a)
-	(* 0x10000 r)
-	(* 0x100 g)
-	(* 0x1 b)))
+(defn list-to-rgba [rgba-list]
+  (let [[r g b a] rgba-list]
+    (+ (* 0x1000000 a)
+       (* 0x10000 r)
+       (* 0x100 g)
+       (* 0x1 b))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; binarize and grayscale
-(defn- magnitude [rgb]
-  (let [[_ r g b] (rgba-to-list rgb)]
+;; Magnitude of the data
+(defn magnitude [rgba]
+  (let [[r g b _] (rgba-to-list rgba)]
     (bit-shift-right (+ (* 77 r)
 			(* 150 g)
 			(* 29 b))
 		     8)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; binarize and grayscale
 (defn- binarize [mag th]
   (if (>= mag th)
     0xFF
     0))
 
-(defn- grayscaled-val [rgb]
-  (let [mag (magnitude rgb)]
-    (rgb-val mag mag mag)))
+(defn monochrome-val [mag]
+  (list-to-rgba [mag mag mag 0xff]))
 
-(defn- binarized-val
+(defn grayscaled-val [rgb]
+  (monochrome-val (magnitude rgb)))
+
+
+(defn binarized-val
   ([rgb]
      (binarized-val rgb 128))
   ([rgb th]
-     (let [mag (binalize (magnitude rgb) th)]
-       (list-to-rgba mag mag mag)))
+     (let [mag (binarize (magnitude rgb) th)]
+       (list-to-rgba [mag mag mag 0xFF]))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -72,12 +75,13 @@
 			 [1 2 1]]})
 
 (defn rms [x y]
-  (sqrt (/ (+ (expt x 2)
-	      (expt y 2))
-	   2)))
+  (int
+   (sqrt (/ (+ (expt x 2)
+	       (expt y 2))
+	    2))))
 
 (defn mean [x y]
-  (/ (+ x y) 2))
+  (int (abs (/ (+ x y) 2))))
 
 
 (defn create-operation [type]
