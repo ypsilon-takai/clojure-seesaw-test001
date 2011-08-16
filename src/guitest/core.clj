@@ -1,16 +1,12 @@
-(ns guitest.core5
-  (:use (guitest.imagetool
-	 seesaw.core
-	 seesaw.chooser)))
+(ns guitest.core
+  (:use [guitest.imagetool]
+	[seesaw core chooser]))
 
 (import '(java.awt AWTException Robot Rectangle Toolkit)
         '(java.awt.image BufferedImage)
         '(java.io File IOException)
         '(javax.imageio ImageIO))
 
-;; info
-;;
-;;   test image D:\Profiles\q3197c\workspace\clojure\guitest\res\y.jpg
 ;;
 (def srcfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y01.jpg")
 (def srcfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y02.jpg")
@@ -72,7 +68,7 @@
 			      :multi? false
 ;;			      :selection-mode :files-only
 			      :remember-directory? true
-			      :filters [["Images" ["png" "jpeg"]]]
+			      :filters [["Images" ["png" "jpg"]]]
 			      :success-fn (fn [fc file] (.getAbsolutePath file)))]
 	(create-image-bufs filename)))
 
@@ -183,6 +179,6 @@
   (let [main (main-window)]
     (invoke-later
      (-> main
-	 show!)))
+	 show!))))
 
        
