@@ -1,4 +1,5 @@
 (ns guitest.core
+  (:gen-class)
   (:use [guitest.imagetool]
 	[seesaw core chooser]))
 
