@@ -2,21 +2,38 @@
   (:use clojure.contrib.math))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; image array
+(defstruct img-array
+  :array  :width  :height)
+
+(defn create-src-img-array [array w h]
+  (struct img-array array w h))
+
+(defn get-rgbval
+  ([im-ar xyval]
+     (let [[x y] xyval]
+       (get-rgbval im-ar x y)))
+  ([im-ar x y]
+     (aget (:array im-ar)
+	   (+ x (* (:width im-ar) y)))))
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; rgb tool
 (defn rgba-to-list [rgb-val]
-  (let [a (/ (bit-and rgb-val 0xff000000) 0x1000000)
-	r (/ (bit-and rgb-val 0xff0000) 0x10000)
-	g (/ (bit-and rgb-val 0xff00) 0x100)
+  (let [a (bit-shift-right (bit-and rgb-val 0xff000000) 24)
+	r (bit-shift-right (bit-and rgb-val 0xff0000) 16)
+	g (bit-shift-right (bit-and rgb-val 0xff00) 8)
 	b (bit-and rgb-val 0xff)]
     [r g b a]))
-  
+
 
 (defn list-to-rgba [rgba-list]
   (let [[r g b a] rgba-list]
-    (+ (* 0x1000000 a)
-       (* 0x10000 r)
-       (* 0x100 g)
-       (* 0x1 b))))
+    (+ (bit-shift-left a 24)
+       (bit-shift-left r 16)
+       (bit-shift-left g 8)
+       b)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Magnitude of the data
@@ -29,17 +46,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; binarize and grayscale
-(defn- binarize [mag th]
-  (if (>= mag th)
-    0xFF
-    0))
-
 (defn monochrome-val [mag]
   (list-to-rgba [mag mag mag 0xff]))
 
 (defn grayscaled-val [rgb]
   (monochrome-val (magnitude rgb)))
 
+
+(defn- binarize [mag th]
+  (if (>= mag th)
+    0xFF
+    0))
 
 (defn binarized-val
   ([rgb]
@@ -92,3 +109,4 @@
        [[(+ a -1) (+ b -1)] (get-val x-op a b)])
      (for [a (range 3) b (range 3) :when (not= (get-val y-op a b) 0)]
        [[(+ a -1) (+ b -1)] (get-val y-op a b)])]))
+

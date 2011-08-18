@@ -4,37 +4,42 @@
 	[seesaw core chooser]))
 
 (import '(java.awt AWTException Robot Rectangle Toolkit)
-        '(java.awt.image BufferedImage)
+        '(java.awt.image BufferedImage PixelGrabber)
         '(java.io File IOException)
         '(javax.imageio ImageIO))
 
-;;
-(def srcfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y01.jpg")
-(def srcfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y02.jpg")
 
 ;;;;;;
-;;
+;; image datas
 (def src-buffered-image (atom nil))
 (def dest-buffered-image (atom nil))
+(def src-img-arr (atom nil))
 
 ;;;;
-(defn get-image [filename]
+(defn read-image [filename]
   "returns BufferedImage of <filename>"
   (ImageIO/read (File. filename)))
 
 
 (defn create-image-bufs [srcfilename]
-  (let [s-image (get-image srcfilename)
+  (let [s-image (read-image srcfilename)
 	h (.getHeight s-image)
 	w (.getWidth s-image)
-	d-image (BufferedImage. w h  BufferedImage/TYPE_BYTE_GRAY)]
-    [s-image d-image]))
+	d-image (BufferedImage. w h  BufferedImage/TYPE_BYTE_GRAY)
+	s-img-array (long-array (* w h))]
+    (do 
+      (.grabPixels (PixelGrabber. s-image 0 0 w h s-img-array 0 w))
+      [s-image w h d-image s-img-array])))
 
-(let [[src-init dest-init] (create-image-bufs srcfilename)]
-  (reset! src-buffered-image src-init)
-  (reset! dest-buffered-image dest-init))
 
-
+(defn setup-new-image-data [srcfilename]
+  (let [[src w h dest arr] (create-image-bufs srcfilename)]
+    (do
+      (reset! src-buffered-image src-init)
+      (reset! dest-buffered-image dest-init)
+      (reset! src-img-arr (create-src-img-array arr w h))
+      [src dest])))
+  
 ;;;;;;;;;;;;;;
 ;; image manu
 (defn create-grayscaled-img [in-bi out-bi]
@@ -64,34 +69,29 @@
 
 ;;;;;;;;;;;;;;
 ;; 
-(defn new-images []
-  (let [filename (choose-file :type :open
-			      :multi? false
-;;			      :selection-mode :files-only
-			      :remember-directory? true
-			      :filters [["Images" ["png" "jpg"]]]
-			      :success-fn (fn [fc file] (.getAbsolutePath file)))]
-	(create-image-bufs filename)))
+(defn new-filename []
+  (choose-file :type :open
+	       :multi? false
+;;	       :selection-mode :files-only
+	       :remember-directory? true
+	       :filters [["Images" ["png" "jpg"]]]
+	       :success-fn (fn [fc file] (.getAbsolutePath file))))
 
-
-(defn reset-images [e]
-  (let [[in-bi out-bi] (new-images)
+(defn select-and-set-to-new-image [e]
+  (let [[in-bi out-bi] (setup-new-image-data (new-filename))
 	src-lbl (select (to-root e) [:#srcimagelabel])
 	dest-lbl (select (to-root e) [:#destimagelabel])]
     (do
-      (reset! src-buffered-image in-bi)
-      (reset! dest-buffered-image out-bi)
       (config! src-lbl :icon in-bi)
       (config! dest-lbl :icon out-bi)
-      (repaint! dest-lbl)
-      (repaint! src-lbl))))
-  
+      (repaint! src-lbl)
+      (repaint! dest-lbl))))
 
 ;;;;;;;;;;;;;;
 ;; handler
 (def open-action
      (action 
-      :handler (fn [e] (reset-images e))
+      :handler (fn [e] (select-and-set-to-new-image e))
       :name "Open ..."
       :key  "menu O"
       :tip  "Open a new something something."))
@@ -117,7 +117,6 @@
 		   (repaint! (select (to-root e) [:#destimagelabel]))))
       :name "Grayscale"
       :tip "Create grayscaled image."))
-
 
 
 (def detect-edge-roberts-action
@@ -175,8 +174,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;
 
+;;
+;;(def srcfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y01.jpg")
+(def startupfilename '"D:/Profiles/q3197c/workspace/clojure/guitest/res/y02.jpg")
+
 (defn -main [& args]
   (native!)
+  (setup-new-image-data startupfilename)
   (let [main (main-window)]
     (invoke-later
      (-> main
