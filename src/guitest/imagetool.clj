@@ -91,6 +91,16 @@
 			 [0 0 0]
 			 [1 2 1]]})
 
+(defn create-operation [type]
+  (let [x-op (type x-operator)
+	y-op (type y-operator)
+	get-val (fn [op x y] (nth (nth op x) y))]
+    [(for [a (range 3) b (range 3) :when (not= (get-val x-op a b) 0)]
+       [[(+ a -1) (+ b -1)] (get-val x-op a b)])
+     (for [a (range 3) b (range 3) :when (not= (get-val y-op a b) 0)]
+       [[(+ a -1) (+ b -1)] (get-val y-op a b)])]))
+
+
 (defn rms [x y]
   (int
    (sqrt (/ (+ (expt x 2)
@@ -101,12 +111,30 @@
   (int (abs (/ (+ x y) 2))))
 
 
-(defn create-operation [type]
-  (let [x-op (type x-operator)
-	y-op (type y-operator)
-	get-val (fn [op x y] (nth (nth op x) y))]
-    [(for [a (range 3) b (range 3) :when (not= (get-val x-op a b) 0)]
-       [[(+ a -1) (+ b -1)] (get-val x-op a b)])
-     (for [a (range 3) b (range 3) :when (not= (get-val y-op a b) 0)]
-       [[(+ a -1) (+ b -1)] (get-val y-op a b)])]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; array transform funcs
 
+(defn transform-to-grayscale [img-arr]
+  (let [arr (:array img-arr)]
+    (struct img-array
+	    (amap ^ints arr
+		  idx
+		  ret
+		  (grayscaled-val (aget ^ints arr idx)))
+	    (:width img-arr)
+	    (:height img-arr))))
+	
+(defn transform-to-edge-img [img-arr type]
+  (let [w (:width img-arr)
+	h (:height img-arr)
+	[op-list-x op-list-y] (create-operation type)]
+    (int-array 
+     (for [x (range 1 (dec w)) y (range 1 (dec h))]
+       (monochrome-val
+	(- 0xff (mean
+		 (reduce + (map (fn [[[dx dy] val]]
+				  (* val (magnitude (get-rgbval img-arr (+ x dx) (+ y dy)))))
+				op-list-x))
+		 (reduce + (map (fn [[[dx dy] val]]
+				  (* val (magnitude (get-rgbval img-arr (+ x dx) (+ y dy)))))
+				op-list-y)))))))))
